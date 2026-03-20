@@ -90,7 +90,7 @@ let chatSession: any = null;
 
 export async function startGame() {
   chatSession = ai.chats.create({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-3-flash-preview',
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.7,

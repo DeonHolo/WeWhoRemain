@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Heart, Zap, Database, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Activity, Heart, Zap, Database, ChevronLeft, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
+import { useGameStore } from '../store';
 
 const ATTRIBUTE_COLORS: Record<string, string> = {
   Might: 'text-[#c13b51]',
@@ -13,6 +14,15 @@ const ATTRIBUTE_COLORS: Record<string, string> = {
 };
 
 export function LeftSidebar({ hp, maxHp, mana, maxMana, level, xp, attributes, backstory, isOpen, setIsOpen }: any) {
+  const resetGame = useGameStore((state) => state.resetGame);
+
+  const handleReset = () => {
+    if (confirm("Are you sure you want to reset your progress? This cannot be undone.")) {
+      resetGame();
+      window.location.reload();
+    }
+  };
+
   return (
     <motion.div
       initial={false}
@@ -68,12 +78,23 @@ export function LeftSidebar({ hp, maxHp, mana, maxMana, level, xp, attributes, b
               <div className="text-xs text-muted-foreground font-bold tracking-widest uppercase">Backstory</div>
               <p className="text-sm text-muted-foreground leading-relaxed">{backstory || "No backstory yet."}</p>
             </div>
+
+            <div className="pt-4 border-t border-border">
+              <div className="text-xs text-muted-foreground font-bold tracking-widest uppercase mb-2">Settings</div>
+              <button 
+                onClick={handleReset}
+                className="w-full text-left text-sm text-red-400 hover:text-red-300 flex items-center gap-2"
+              >
+                <SettingsIcon size={16} /> Reset Progress
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-6 pt-4">
              <Activity size={20} className="text-yellow-500"/>
              <Heart size={20} className="text-red-500"/>
              <Zap size={20} className="text-blue-500"/>
+             <SettingsIcon size={20} className="text-muted-foreground cursor-pointer" onClick={handleReset} />
           </div>
         )}
       </div>

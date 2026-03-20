@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface GameState {
   hp: number;
@@ -28,9 +29,10 @@ export interface GameState {
   addCombatLog: (logs: string[]) => void;
   updateState: (updates: Partial<GameState>) => void;
   setRolling: (rolling: boolean) => void;
+  resetGame: () => void;
 }
 
-export const useGameStore = create<GameState>((set) => ({
+const initialState = {
   hp: 0,
   maxHp: 0,
   mana: 0,
@@ -52,17 +54,29 @@ export const useGameStore = create<GameState>((set) => ({
   currentChoices: [],
   isRolling: false,
   hasStarted: false,
-  addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
-  setChoices: (choices) => set({ currentChoices: choices }),
-  addSystemMemory: (mems) => set((state) => ({ systemMemory: [...state.systemMemory, ...mems] })),
-  addCombatLog: (logs) => set((state) => ({ combatLog: [...state.combatLog, ...logs] })),
-  updateState: (updates) => set((state) => {
-    const newState = { ...state, ...updates };
-    const userMessageCount = state.messages.filter(m => m.role === 'user').length;
-    if (userMessageCount >= 2) {
-      newState.hasStarted = true;
+};
+
+export const useGameStore = create<GameState>()(
+  persist(
+    (set) => ({
+      ...initialState,
+      addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+      setChoices: (choices) => set({ currentChoices: choices }),
+      addSystemMemory: (mems) => set((state) => ({ systemMemory: [...state.systemMemory, ...mems] })),
+      addCombatLog: (logs) => set((state) => ({ combatLog: [...state.combatLog, ...logs] })),
+      updateState: (updates) => set((state) => {
+        const newState = { ...state, ...updates };
+        const userMessageCount = state.messages.filter(m => m.role === 'user').length;
+        if (userMessageCount >= 2) {
+          newState.hasStarted = true;
+        }
+        return newState;
+      }),
+      setRolling: (rolling) => set({ isRolling: rolling }),
+      resetGame: () => set(initialState),
+    }),
+    {
+      name: 'game-storage',
     }
-    return newState;
-  }),
-  setRolling: (rolling) => set({ isRolling: rolling }),
-}));
+  )
+);
