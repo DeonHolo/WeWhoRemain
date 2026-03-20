@@ -7,6 +7,7 @@ export interface GameState {
   maxMana: number;
   level: number;
   xp: number;
+  backstory: string;
   attributes: {
     Might: number;
     Agility: number;
@@ -36,6 +37,7 @@ export const useGameStore = create<GameState>((set) => ({
   maxMana: 0,
   level: 1,
   xp: 0,
+  backstory: '',
   attributes: {
     Might: 0,
     Agility: 0,
