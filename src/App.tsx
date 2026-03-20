@@ -515,6 +515,8 @@ export default function App() {
 
   useEffect(() => {
     const initGame = async () => {
+      const { messages } = useGameStore.getState();
+      if (messages.length > 0) return;
       if (initialized.current) return;
       initialized.current = true;
       setIsLoading(true);

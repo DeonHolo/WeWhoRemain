@@ -73,7 +73,10 @@ export const useGameStore = create<GameState>()(
         return newState;
       }),
       setRolling: (rolling) => set({ isRolling: rolling }),
-      resetGame: () => set(initialState),
+      resetGame: () => {
+        localStorage.removeItem('game-storage');
+        set(initialState);
+      },
     }),
     {
       name: 'game-storage',
