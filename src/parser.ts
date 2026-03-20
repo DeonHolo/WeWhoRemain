@@ -63,9 +63,9 @@ export function parseGMResponse(responseText: string) {
   }
 
   // Extract Choices
-  const choiceRegex1 = /(?:^|\n)\s*(?:(?:[*>-]|\d+\.)\s*)?\[(Might|Agility|Fortitude|Intellect|Willpower|Presence)(?:\s*\|\s*DC\s*(\d+))?\]\s*([^\n]+)/g;
+  const choiceRegex1 = /(?:^|\n)\s*(?:(?:[*>-]|\d+\.)\s*)?\[(Might|Agility|Fortitude|Intellect|Willpower|Presence|System)(?:\s*\|\s*(?:DC\s*(\d+)|Choice))?\]\s*([^\n]+)/g;
   while ((match = choiceRegex1.exec(narrative)) !== null) {
-    choices.push({ attribute: match[1], dc: match[2], text: match[3].trim() });
+    choices.push({ attribute: match[1] === 'System' ? '' : match[1], dc: match[2], text: match[3].trim() });
   }
   narrative = narrative.replace(choiceRegex1, '');
 

@@ -17,12 +17,12 @@ The world is a modern-day setting destroyed by the sudden appearance of portals.
 
 4. THE CORE MECHANIC: SENTIENT ATTRIBUTES
 The player's interface is a fractured council of voices in their head, represented by their six core Attributes. These voices dictate choices and argue with each other. They must sound like distinct, unhinged personalities speaking directly to the player.
-Might (Blood Red): Aggressive, militant, and favors overwhelming physical force.
-Agility (Neon Yellow): Opportunistic, cynical, and highly motivated by self-preservation.
-Fortitude (Rust Orange): Deeply paranoid, gritty, and hyper-fixated on bodily limits.
-Intellect (Electric Blue): Arrogant, clinical, and utterly obsessed with anomalous data.
-Willpower (Verdant Green): Deeply empathetic, defensive, and desperate to hold onto basic human decency.
-Presence (Deep Purple): Manipulative, sociopathic, exploits other survivors.
+Might: Aggressive, militant, and favors overwhelming physical force.
+Agility: Opportunistic, cynical, and highly motivated by self-preservation.
+Fortitude: Deeply paranoid, gritty, and hyper-fixated on bodily limits.
+Intellect: Arrogant, clinical, and utterly obsessed with anomalous data.
+Willpower: Deeply empathetic, defensive, and desperate to hold onto basic human decency.
+Presence: Manipulative, sociopathic, exploits other survivors.
 
 5. STAT SCALING AND RESOURCE MANAGEMENT
 Baseline: The average human stat is 10. The hard cap is 20.
@@ -90,7 +90,7 @@ let chatSession: any = null;
 
 export async function startGame() {
   chatSession = ai.chats.create({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.1-pro-preview',
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.7,
