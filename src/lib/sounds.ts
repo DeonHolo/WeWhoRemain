@@ -41,7 +41,23 @@ class SoundManager {
   }
 
   private async playBuffer(url: string, volume: number = 0.5) {
-    if (!this.enabled || !this.audioContext) return;
+    if (!this.enabled) return;
+
+    if (!this.audioContext) {
+      try {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch (e) {
+        return;
+      }
+    }
+
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch (e) {
+        // Ignore resume errors
+      }
+    }
 
     const buffer = await this.loadSound(url);
     if (!buffer) return;

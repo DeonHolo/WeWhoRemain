@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useGameStore } from './store';
 import { startGame, sendMessage, resumeGame } from './gemini';
 import { parseGMResponse } from './parser';
@@ -172,22 +172,23 @@ function RichText({ text }: { text: string }) {
 }
 
 function StoryDisplay({ text, onComplete, isLast }: { text: string, onComplete?: () => void, isLast?: boolean }) {
-  const blocks = text.split('\n\n').filter(block => block.trim() !== '');
+  const blocks = useMemo(() => text.split('\n\n').filter(block => block.trim() !== ''), [text]);
   const [visibleBlocks, setVisibleBlocks] = useState(isLast ? 1 : blocks.length);
-  const [isFinished, setIsFinished] = useState(!isLast);
+  const [isFinished, setIsFinished] = useState(!isLast || blocks.length === 0);
 
+  // Reset state when text changes to ensure new messages start from the beginning
   useEffect(() => {
-    if (!isLast) {
-      setVisibleBlocks(blocks.length);
-      setIsFinished(true);
-    }
-  }, [isLast, blocks.length]);
+    setVisibleBlocks(isLast ? 1 : blocks.length);
+    setIsFinished(!isLast || blocks.length === 0);
+  }, [text, isLast, blocks.length]);
 
   useEffect(() => {
     if (isFinished && onComplete) {
       onComplete();
     }
   }, [isFinished, onComplete]);
+
+  if (blocks.length === 0) return null;
 
   return (
     <div className="space-y-6">
