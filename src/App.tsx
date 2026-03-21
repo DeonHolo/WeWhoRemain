@@ -245,14 +245,14 @@ function Dice({ stat, targetDC, statValue, onComplete }: { stat: string, targetD
           <Text position={[0, 0, 2.1]} fontSize={1.5} color="white" anchorX="center" anchorY="middle">
             {rollResult.toString()}
           </Text>
-          <Html position={[0, -3, 0]} center>
-            <div className="flex flex-col items-center gap-4">
-              <div className="text-2xl font-bold text-white bg-black/50 p-4 rounded-lg backdrop-blur-sm">
+          <Html position={[0, -2, 0]} center zIndexRange={[100, 0]}>
+            <div className="flex flex-col items-center gap-4 w-max mt-8">
+              <div className="text-xl font-bold text-white bg-black/80 p-4 rounded-xl backdrop-blur-md border border-white/10 whitespace-nowrap shadow-2xl">
                 Result: {rollResult + statValue} (Roll {rollResult} + Mod {statValue}) vs DC {targetDC}
               </div>
               <button
                 onClick={() => onComplete(rollResult)}
-                className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors"
+                className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors cursor-pointer pointer-events-auto shadow-lg"
               >
                 Continue
               </button>
@@ -264,8 +264,11 @@ function Dice({ stat, targetDC, statValue, onComplete }: { stat: string, targetD
   );
 }
 
-function CreationUI({ messages, currentChoices, handleChoice, isLoading }: any) {
-  const lastModelMessage = [...messages].reverse().find(m => m.role === 'model');
+function CreationUI({ messages, currentChoices, handleChoice, isLoading, isRolling }: any) {
+  const visibleMessages = isRolling && messages[messages.length - 1]?.role === 'model' 
+    ? messages.slice(0, -1) 
+    : messages;
+  const lastModelMessage = [...visibleMessages].reverse().find(m => m.role === 'model');
   const [isStoryFinished, setIsStoryFinished] = useState(false);
 
   useEffect(() => {
@@ -354,12 +357,16 @@ function CreationUI({ messages, currentChoices, handleChoice, isLoading }: any) 
 
 function PlayingUI({
   hp, maxHp, mana, maxMana, level, xp, backstory, attributes,
-  systemMemory, combatLog, messages, currentChoices, isLoading,
+  systemMemory, combatLog, messages, currentChoices, isLoading, isRolling,
   handleChoice, chatContainerRef
 }: any) {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [isLastMessageFinished, setIsLastMessageFinished] = useState(false);
+
+  const visibleMessages = isRolling && messages[messages.length - 1]?.role === 'model' 
+    ? messages.slice(4, -1) 
+    : messages.slice(4);
 
   useEffect(() => {
     setIsLastMessageFinished(false);
@@ -377,8 +384,8 @@ function PlayingUI({
         <div className="flex-1 flex flex-col relative bg-background/95 items-center">
           <div className="w-full max-w-6xl flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar" ref={chatContainerRef}>
             <div className="space-y-8 pb-8">
-              {messages.slice(4).map((m: any, i: number) => {
-                const isLast = i === messages.slice(4).length - 1;
+              {visibleMessages.map((m: any, i: number) => {
+                const isLast = i === visibleMessages.length - 1;
                 return (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -392,14 +399,14 @@ function PlayingUI({
                   </motion.div>
                 );
               })}
-              {isLoading && (
+              {isLoading && !isRolling && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-muted-foreground flex items-center gap-3 p-4">
                   <Terminal size={18} className="animate-pulse" /> <span className="animate-pulse tracking-wider text-sm">The System is processing...</span>
                 </motion.div>
               )}
 
               {/* Inline Choices */}
-              {!isLoading && isLastMessageFinished && currentChoices.length > 0 && (
+              {!isLoading && !isRolling && isLastMessageFinished && currentChoices.length > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -527,12 +534,11 @@ function StartMenu({ onStart }: { onStart: () => void }) {
 export default function App() {
   const {
     hp, maxHp, mana, maxMana, level, xp, backstory, attributes,
-    systemMemory, combatLog, messages, currentChoices, isRolling, hasStarted,
-    addMessage, setChoices, addSystemMemory, addCombatLog, updateState, setRolling
+    systemMemory, combatLog, messages, currentChoices, isRolling, hasStarted, pendingParsed,
+    addMessage, setChoices, addSystemMemory, addCombatLog, updateState, setRolling, setPendingParsed
   } = useGameStore();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [pendingParsed, setPendingParsed] = useState<any>(null);
   const [showStartMenu, setShowStartMenu] = useState(messages.length === 0);
   const initialized = useRef(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -552,6 +558,7 @@ export default function App() {
     try {
       const response = await startGame();
       const parsed = parseGMResponse(response);
+      addMessage({ role: 'model', content: parsed.narrative });
       applyParsedResponse(parsed);
     } catch (e) {
       console.error(e);
@@ -568,7 +575,6 @@ export default function App() {
   }, [messages, isLoading]);
 
   const applyParsedResponse = (parsed: any) => {
-    addMessage({ role: 'model', content: parsed.narrative });
     if (parsed.systemMemories.length) addSystemMemory(parsed.systemMemories);
     if (parsed.combatLogs.length) addCombatLog(parsed.combatLogs);
     if (parsed.choices.length) setChoices(parsed.choices);
@@ -584,6 +590,8 @@ export default function App() {
     try {
       const response = await sendMessage(text);
       const parsed = parseGMResponse(response);
+
+      addMessage({ role: 'model', content: parsed.narrative });
 
       if (parsed.diceRoll) {
         setPendingParsed(parsed);
@@ -622,6 +630,7 @@ export default function App() {
               currentChoices={currentChoices}
               handleChoice={handleChoice}
               isLoading={isLoading}
+              isRolling={isRolling}
             />
           </motion.div>
         ) : (
@@ -629,7 +638,7 @@ export default function App() {
             <PlayingUI
               hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} backstory={backstory} attributes={attributes}
               systemMemory={systemMemory} combatLog={combatLog} messages={messages} currentChoices={currentChoices}
-              isLoading={isLoading} handleChoice={handleChoice} chatContainerRef={chatContainerRef}
+              isLoading={isLoading} isRolling={isRolling} handleChoice={handleChoice} chatContainerRef={chatContainerRef}
             />
           </motion.div>
         )}
@@ -647,7 +656,7 @@ export default function App() {
             <div className="text-3xl font-black text-white mb-8 tracking-widest drop-shadow-lg">
               ROLLING <span className={ATTRIBUTE_COLORS[pendingParsed.diceRoll.stat]}>{pendingParsed.diceRoll.stat.toUpperCase()}</span>
             </div>
-            <div className="w-64 h-64">
+            <div className="w-full h-96 max-w-2xl">
               <Canvas camera={{ position: [0, 0, 5] }}>
                 <ambientLight intensity={0.5} />
                 <pointLight position={[10, 10, 10]} />

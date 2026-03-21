@@ -23,12 +23,14 @@ export interface GameState {
   currentChoices: { text: string; attribute: string; dc?: string }[];
   isRolling: boolean;
   hasStarted: boolean;
+  pendingParsed: any | null;
   addMessage: (msg: { role: 'user' | 'model'; content: string; parsed?: any }) => void;
   setChoices: (choices: { text: string; attribute: string; dc?: string }[]) => void;
   addSystemMemory: (mems: string[]) => void;
   addCombatLog: (logs: string[]) => void;
   updateState: (updates: Partial<GameState>) => void;
   setRolling: (rolling: boolean) => void;
+  setPendingParsed: (parsed: any | null) => void;
   resetGame: () => void;
 }
 
@@ -54,6 +56,7 @@ const initialState = {
   currentChoices: [],
   isRolling: false,
   hasStarted: false,
+  pendingParsed: null,
 };
 
 export const useGameStore = create<GameState>()(
@@ -73,6 +76,7 @@ export const useGameStore = create<GameState>()(
         return newState;
       }),
       setRolling: (rolling) => set({ isRolling: rolling }),
+      setPendingParsed: (parsed) => set({ pendingParsed: parsed }),
       resetGame: () => {
         localStorage.removeItem('game-storage');
         set(initialState);
