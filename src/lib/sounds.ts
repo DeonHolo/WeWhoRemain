@@ -28,14 +28,22 @@ class SoundManager {
     if (this.bufferCache[url]) return this.bufferCache[url];
     if (!this.audioContext) return null;
 
+    // Resolve path relative to BASE_URL
+    const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+    const baseUrl = (import.meta as any).env.BASE_URL || '/';
+    const finalUrl = baseUrl.endsWith('/') ? `${baseUrl}${cleanPath}` : `${baseUrl}/${cleanPath}`;
+
     try {
-      const response = await fetch(url);
+      const response = await fetch(finalUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const arrayBuffer = await response.arrayBuffer();
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       this.bufferCache[url] = audioBuffer;
       return audioBuffer;
     } catch (e) {
-      console.error(`Failed to load sound: ${url}`, e);
+      console.error(`Failed to load sound: ${finalUrl}`, e);
       return null;
     }
   }
