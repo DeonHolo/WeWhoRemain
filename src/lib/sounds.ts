@@ -41,12 +41,17 @@ class SoundManager {
   }
 
   private async playBuffer(url: string, volume: number = 0.5) {
-    if (!this.enabled) return;
+    if (!this.enabled) {
+      console.log(`Sound disabled, skipping: ${url}`);
+      return;
+    }
 
     if (!this.audioContext) {
       try {
         this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        console.log('AudioContext initialized');
       } catch (e) {
+        console.error('Failed to initialize AudioContext', e);
         return;
       }
     }
@@ -54,24 +59,33 @@ class SoundManager {
     if (this.audioContext.state === 'suspended') {
       try {
         await this.audioContext.resume();
+        console.log('AudioContext resumed');
       } catch (e) {
-        // Ignore resume errors
+        console.error('Failed to resume AudioContext', e);
       }
     }
 
     const buffer = await this.loadSound(url);
-    if (!buffer) return;
+    if (!buffer) {
+      console.error(`No buffer for sound: ${url}`);
+      return;
+    }
 
-    const source = this.audioContext.createBufferSource();
-    source.buffer = buffer;
+    try {
+      const source = this.audioContext.createBufferSource();
+      source.buffer = buffer;
 
-    const gainNode = this.audioContext.createGain();
-    gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+      const gainNode = this.audioContext.createGain();
+      gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
 
-    source.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
+      source.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
 
-    source.start();
+      source.start();
+      console.log(`Playing sound: ${url}`);
+    } catch (e) {
+      console.error(`Failed to play sound: ${url}`, e);
+    }
   }
 
   // UI sounds from provided files
