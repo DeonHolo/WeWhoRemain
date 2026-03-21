@@ -61,48 +61,48 @@ class SoundManager {
   // UI sounds from provided files
 
   public playThud() {
-    this.playBuffer('/UI sounds/switch-01.wav', 0.6);
+    this.playBuffer('/ui-sounds/switch-01.wav', 0.6);
   }
 
   public playClick() {
-    this.playBuffer('/UI sounds/small-button-click-01.wav', 0.4);
+    this.playBuffer('/ui-sounds/small-button-click-01.wav', 0.4);
   }
 
   public playRustle() {
-    this.playBuffer('/UI sounds/switch-04.wav', 0.3);
+    this.playBuffer('/ui-sounds/switch-04.wav', 0.3);
   }
 
   public playSuccess() {
-    this.playBuffer('/UI sounds/task-complete-01.wav', 0.5);
+    this.playBuffer('/ui-sounds/task-complete-01.wav', 0.5);
   }
 
   public playFailure() {
-    this.playBuffer('/UI sounds/morale-damaged-03.wav', 0.5);
+    this.playBuffer('/ui-sounds/morale-damaged-03.wav', 0.5);
   }
 
   // Attribute specific sounds
   public playMight() {
-    this.playBuffer('/UI sounds/interface-skill-passiveFYS-03-01.wav', 0.6);
+    this.playBuffer('/ui-sounds/interface-skill-passiveFYS-03-01.wav', 0.6);
   }
 
   public playIntellect() {
-    this.playBuffer('/UI sounds/interface-skill-passiveINT-04-01.wav', 0.6);
+    this.playBuffer('/ui-sounds/interface-skill-passiveINT-04-01.wav', 0.6);
   }
 
   public playPresence() {
-    this.playBuffer('/UI sounds/interface-skill-passivePSY-04-02.wav', 0.6);
+    this.playBuffer('/ui-sounds/interface-skill-passivePSY-04-02.wav', 0.6);
   }
 
   public playWillpower() {
-    this.playBuffer('/UI sounds/interface-skill-passivePSY-04-02.wav', 0.6);
+    this.playBuffer('/ui-sounds/interface-skill-passivePSY-04-02.wav', 0.6);
   }
 
   public playFortitude() {
-    this.playBuffer('/UI sounds/interface-skill-passiveMOT-04-01.wav', 0.6);
+    this.playBuffer('/ui-sounds/interface-skill-passiveMOT-04-01.wav', 0.6);
   }
 
   public playAgility() {
-    this.playBuffer('/UI sounds/interface-skill-passiveMOT-04-01.wav', 0.6);
+    this.playBuffer('/ui-sounds/interface-skill-passiveMOT-04-01.wav', 0.6);
   }
 
   public playAttributeSound(attribute: string) {

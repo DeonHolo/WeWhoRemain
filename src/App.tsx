@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useGameStore } from './store';
 import { startGame, sendMessage, resumeGame } from './gemini';
 import { parseGMResponse } from './parser';
@@ -174,20 +174,20 @@ function RichText({ text }: { text: string }) {
 function StoryDisplay({ text, onComplete, isLast }: { text: string, onComplete?: () => void, isLast?: boolean }) {
   const blocks = text.split('\n\n').filter(block => block.trim() !== '');
   const [visibleBlocks, setVisibleBlocks] = useState(isLast ? 1 : blocks.length);
+  const [isFinished, setIsFinished] = useState(!isLast);
 
   useEffect(() => {
     if (!isLast) {
       setVisibleBlocks(blocks.length);
+      setIsFinished(true);
     }
   }, [isLast, blocks.length]);
 
   useEffect(() => {
-    if (blocks.length === 0 && onComplete) {
-      onComplete();
-    } else if (visibleBlocks >= blocks.length && onComplete) {
+    if (isFinished && onComplete) {
       onComplete();
     }
-  }, [visibleBlocks, blocks.length, onComplete]);
+  }, [isFinished, onComplete]);
 
   return (
     <div className="space-y-6">
@@ -201,14 +201,18 @@ function StoryDisplay({ text, onComplete, isLast }: { text: string, onComplete?:
           <RichText text={block} />
         </motion.div>
       ))}
-      {isLast && visibleBlocks < blocks.length && (
+      {isLast && !isFinished && (
         <div className="flex justify-center pt-8">
           <motion.button
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             onClick={() => {
               soundManager.playRustle();
-              setVisibleBlocks(prev => prev + 1);
+              if (visibleBlocks < blocks.length) {
+                setVisibleBlocks(prev => prev + 1);
+              } else {
+                setIsFinished(true);
+              }
             }}
             className="px-10 py-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg font-black tracking-widest uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] border border-foreground/10"
           >
@@ -288,6 +292,10 @@ function CreationUI({
   const [isStoryFinished, setIsStoryFinished] = useState(false);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
 
+  const onStoryComplete = useCallback(() => {
+    setIsStoryFinished(true);
+  }, []);
+
   useEffect(() => {
     setIsStoryFinished(false);
   }, [lastModelMessage]);
@@ -316,7 +324,7 @@ function CreationUI({
         <div className="flex-1 overflow-y-auto custom-scrollbar mb-4 pr-1 md:pr-2">
           <Card className="bg-card/40 backdrop-blur-md border-border shadow-2xl min-h-full">
             <CardContent className="p-4 md:p-6 text-sm md:text-base leading-snug">
-              {lastModelMessage ? <StoryDisplay text={lastModelMessage.content} isLast={true} onComplete={() => setIsStoryFinished(true)} /> : "Initializing The System..."}
+              {lastModelMessage ? <StoryDisplay text={lastModelMessage.content} isLast={true} onComplete={onStoryComplete} /> : "Initializing The System..."}
               
               {!isLoading && isStoryFinished && currentChoices.length > 0 && (
                 <div className="mt-4 space-y-2">
@@ -396,6 +404,10 @@ function PlayingUI({
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [isLastMessageFinished, setIsLastMessageFinished] = useState(false);
 
+  const onMessageComplete = useCallback(() => {
+    setIsLastMessageFinished(true);
+  }, []);
+
   const visibleMessages = isRolling && messages[messages.length - 1]?.role === 'model' 
     ? messages.slice(4, -1) 
     : messages.slice(4);
@@ -426,7 +438,7 @@ function PlayingUI({
                     className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`max-w-[90%] md:max-w-[85%] p-5 rounded-2xl text-lg ${m.role === 'user' ? 'bg-muted text-muted-foreground border border-border rounded-br-sm' : 'bg-transparent'}`}>
-                      {m.role === 'user' ? m.content : <StoryDisplay text={m.content} isLast={isLast} onComplete={isLast ? () => setIsLastMessageFinished(true) : undefined} />}
+                      {m.role === 'user' ? m.content : <StoryDisplay text={m.content} isLast={isLast} onComplete={isLast ? onMessageComplete : undefined} />}
                     </div>
                   </motion.div>
                 );
