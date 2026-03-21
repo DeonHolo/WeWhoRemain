@@ -284,18 +284,21 @@ function Dice({ stat, targetDC, statValue, onComplete }: { stat: string, targetD
 
 function CreationUI({ 
   messages, currentChoices, handleChoice, isLoading, isRolling,
-  hp, maxHp, mana, maxMana, level, xp, backstory, attributes, inventory
+  hp, maxHp, mana, maxMana, level, xp, backstory, attributes, inventory,
+  pendingParsed, setRolling
 }: any) {
-  const visibleMessages = isRolling && messages[messages.length - 1]?.role === 'model' 
-    ? messages.slice(0, -1) 
-    : messages;
+  const visibleMessages = messages;
   const lastModelMessage = [...visibleMessages].reverse().find(m => m.role === 'model');
   const [isStoryFinished, setIsStoryFinished] = useState(false);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
 
   const onStoryComplete = useCallback(() => {
     setIsStoryFinished(true);
-  }, []);
+    if (pendingParsed?.diceRoll) {
+      setRolling(true);
+      soundManager.playAttributeSound(pendingParsed.diceRoll.stat);
+    }
+  }, [pendingParsed, setRolling]);
 
   useEffect(() => {
     setIsStoryFinished(false);
@@ -318,7 +321,7 @@ function CreationUI({
           className="max-w-7xl w-full z-10 flex flex-col h-full py-2 md:py-4"
         >
         <div className="text-center space-y-2 mb-4 shrink-0">
-          <h1 className="text-2xl md:text-4xl font-black tracking-widest text-foreground/90 drop-shadow-lg">WE WHO REMAIN</h1>
+          <h1 className="text-2xl md:text-4xl font-black tracking-widest text-foreground/90 drop-shadow-lg">We Who Remain</h1>
           <Separator className="w-24 bg-red-900/50 mx-auto" />
         </div>
 
@@ -399,7 +402,7 @@ function CreationUI({
 function PlayingUI({
   hp, maxHp, mana, maxMana, level, xp, backstory, attributes, inventory,
   systemMemory, combatLog, messages, currentChoices, isLoading, isRolling,
-  handleChoice, chatContainerRef
+  handleChoice, chatContainerRef, pendingParsed, setRolling
 }: any) {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
@@ -407,11 +410,13 @@ function PlayingUI({
 
   const onMessageComplete = useCallback(() => {
     setIsLastMessageFinished(true);
-  }, []);
+    if (pendingParsed?.diceRoll) {
+      setRolling(true);
+      soundManager.playAttributeSound(pendingParsed.diceRoll.stat);
+    }
+  }, [pendingParsed, setRolling]);
 
-  const visibleMessages = isRolling && messages[messages.length - 1]?.role === 'model' 
-    ? messages.slice(4, -1) 
-    : messages.slice(4);
+  const visibleMessages = messages.slice(4);
 
   useEffect(() => {
     setIsLastMessageFinished(false);
@@ -579,7 +584,7 @@ function StartMenu({ onStart }: { onStart: () => void }) {
         animate={{ opacity: 1, scale: 1 }}
         className="z-10 text-center space-y-8"
       >
-        <h1 className="text-5xl md:text-7xl font-black tracking-widest text-foreground/90 drop-shadow-lg">WE WHO REMAIN</h1>
+        <h1 className="text-5xl md:text-7xl font-black tracking-widest text-foreground/90 drop-shadow-lg">We Who Remain</h1>
         <p className="text-muted-foreground text-lg max-w-md mx-auto">A text-based apocalyptic LitRPG.</p>
         <button
           onClick={() => {
@@ -660,8 +665,7 @@ export default function App() {
 
       if (parsed.diceRoll) {
         setPendingParsed(parsed);
-        setRolling(true);
-        soundManager.playAttributeSound(parsed.diceRoll.stat);
+        // We now trigger rolling in onStoryComplete/onMessageComplete
       } else {
         applyParsedResponse(parsed);
       }
@@ -731,6 +735,7 @@ export default function App() {
               isLoading={isLoading}
               isRolling={isRolling}
               hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} backstory={backstory} attributes={attributes} inventory={inventory}
+              pendingParsed={pendingParsed} setRolling={setRolling}
             />
           </motion.div>
         ) : (
@@ -739,6 +744,7 @@ export default function App() {
               hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} backstory={backstory} attributes={attributes} inventory={inventory}
               systemMemory={systemMemory} combatLog={combatLog} messages={messages} currentChoices={currentChoices}
               isLoading={isLoading} isRolling={isRolling} handleChoice={handleChoice} chatContainerRef={chatContainerRef}
+              pendingParsed={pendingParsed} setRolling={setRolling}
             />
           </motion.div>
         )}

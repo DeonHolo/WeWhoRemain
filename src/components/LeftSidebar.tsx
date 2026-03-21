@@ -34,7 +34,7 @@ export function LeftSidebar({ hp, maxHp, mana, maxMana, level, xp, attributes, b
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           {isOpen ? (
             <div className="space-y-6">
-              <div className="text-xl font-black tracking-widest text-foreground">WE WHO REMAIN</div>
+              <div className="text-xl font-black tracking-widest text-foreground">We Who Remain</div>
               
               <div className="flex items-center gap-2 text-sm font-bold text-yellow-500">
                 <Activity size={16}/> LVL {level} <span className="text-muted-foreground">({xp} / {level * 100} XP)</span>
