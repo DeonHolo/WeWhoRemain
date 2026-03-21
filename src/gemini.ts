@@ -90,7 +90,7 @@ let chatSession: any = null;
 
 export async function startGame() {
   chatSession = ai.chats.create({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.1-flash-lite-preview',
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.7,
@@ -98,6 +98,20 @@ export async function startGame() {
   });
   const response = await chatSession.sendMessage({ message: "Start a new game." });
   return response.text;
+}
+
+export function resumeGame(messages: { role: 'user' | 'model'; content: string }[]) {
+  chatSession = ai.chats.create({
+    model: 'gemini-3.1-flash-lite-preview',
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      temperature: 0.7,
+    },
+    history: messages.map(m => ({
+      role: m.role,
+      parts: [{ text: m.content }]
+    }))
+  });
 }
 
 export async function sendMessage(msg: string) {

@@ -1,10 +1,7 @@
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Heart, Zap, Database, ChevronLeft, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
-import { useGameStore } from '../store';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Activity, Heart, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ATTRIBUTE_COLORS: Record<string, string> = {
   Might: 'text-[#c13b51]',
@@ -16,37 +13,8 @@ const ATTRIBUTE_COLORS: Record<string, string> = {
 };
 
 export function LeftSidebar({ hp, maxHp, mana, maxMana, level, xp, attributes, backstory, isOpen, setIsOpen }: any) {
-  const resetGame = useGameStore((state) => state.resetGame);
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-
-  const handleReset = () => {
-    resetGame();
-    window.location.reload();
-  };
-
   return (
     <>
-      <AnimatePresence>
-        {isResetModalOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          >
-            <Card className="w-80 bg-card border-border shadow-2xl">
-              <CardContent className="p-6 space-y-4">
-                <h3 className="text-lg font-bold text-white">Reset Progress?</h3>
-                <p className="text-sm text-muted-foreground">Are you sure you want to reset your progress? This cannot be undone.</p>
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setIsResetModalOpen(false)}>Cancel</Button>
-                  <Button variant="destructive" onClick={handleReset}>Reset</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
       <motion.div
         initial={false}
         animate={{ width: isOpen ? 300 : 60 }}
@@ -101,23 +69,12 @@ export function LeftSidebar({ hp, maxHp, mana, maxMana, level, xp, attributes, b
                 <div className="text-xs text-muted-foreground font-bold tracking-widest uppercase">Backstory</div>
                 <p className="text-sm text-muted-foreground leading-relaxed">{backstory || "No backstory yet."}</p>
               </div>
-
-              <div className="pt-4 border-t border-border">
-                <div className="text-xs text-muted-foreground font-bold tracking-widest uppercase mb-2">Settings</div>
-                <button 
-                  onClick={() => setIsResetModalOpen(true)}
-                  className="w-full text-left text-sm text-red-400 hover:text-red-300 flex items-center gap-2"
-                >
-                  <SettingsIcon size={16} /> Reset Progress
-                </button>
-              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-6 pt-4">
                <Activity size={20} className="text-yellow-500"/>
                <Heart size={20} className="text-red-500"/>
                <Zap size={20} className="text-blue-500"/>
-               <SettingsIcon size={20} className="text-muted-foreground cursor-pointer" onClick={() => setIsResetModalOpen(true)} />
             </div>
           )}
         </div>

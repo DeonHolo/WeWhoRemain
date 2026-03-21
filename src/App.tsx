@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useGameStore } from './store';
-import { startGame, sendMessage } from './gemini';
+import { startGame, sendMessage, resumeGame } from './gemini';
 import { parseGMResponse } from './parser';
 import { motion, AnimatePresence } from 'motion/react';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { LeftSidebar } from './components/LeftSidebar';
+import { GlobalSettings } from './components/GlobalSettings';
 
 const ATTRIBUTE_COLORS: Record<string, string> = {
   Might: 'text-[#c13b51]',
@@ -501,6 +502,28 @@ function PlayingUI({
   );
 }
 
+function StartMenu({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="h-[100dvh] flex flex-col items-center justify-center bg-background relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 via-background to-background" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="z-10 text-center space-y-8"
+      >
+        <h1 className="text-5xl md:text-7xl font-black tracking-widest text-white/90 drop-shadow-lg">WE WHO REMAIN</h1>
+        <p className="text-muted-foreground text-lg max-w-md mx-auto">A text-based apocalyptic LitRPG.</p>
+        <button
+          onClick={onStart}
+          className="px-12 py-4 bg-primary text-primary-foreground rounded-lg font-black tracking-widest uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] border border-white/10"
+        >
+          Enter The System
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function App() {
   const {
     hp, maxHp, mana, maxMana, level, xp, backstory, attributes,
@@ -510,29 +533,33 @@ export default function App() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [pendingParsed, setPendingParsed] = useState<any>(null);
+  const [showStartMenu, setShowStartMenu] = useState(messages.length === 0);
   const initialized = useRef(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const initGame = async () => {
-      const { messages } = useGameStore.getState();
-      if (messages.length > 0) return;
-      if (initialized.current) return;
+    if (messages.length > 0 && !initialized.current) {
       initialized.current = true;
-      setIsLoading(true);
-      try {
-        const response = await startGame();
-        const parsed = parseGMResponse(response);
-        applyParsedResponse(parsed);
-      } catch (e) {
-        console.error(e);
-        addMessage({ role: 'model', content: "Failed to initialize The System." });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initGame();
-  }, []);
+      resumeGame(messages);
+    }
+  }, [messages]);
+
+  const handleStartGame = async () => {
+    setShowStartMenu(false);
+    if (initialized.current) return;
+    initialized.current = true;
+    setIsLoading(true);
+    try {
+      const response = await startGame();
+      const parsed = parseGMResponse(response);
+      applyParsedResponse(parsed);
+    } catch (e) {
+      console.error(e);
+      addMessage({ role: 'model', content: "Failed to initialize The System." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -582,8 +609,13 @@ export default function App() {
 
   return (
     <>
+      <GlobalSettings />
       <AnimatePresence mode="wait">
-        {!hasStarted ? (
+        {showStartMenu ? (
+          <motion.div key="start" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.5 }}>
+            <StartMenu onStart={handleStartGame} />
+          </motion.div>
+        ) : !hasStarted ? (
           <motion.div key="creation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.5 }}>
             <CreationUI
               messages={messages}
