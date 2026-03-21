@@ -15,6 +15,10 @@ export function parseGMResponse(responseText: string) {
       const match = new RegExp(`${name}="(\\d+)"`).exec(attrsString);
       return match ? parseInt(match[1], 10) : 0;
     };
+    const getStringAttr = (name: string) => {
+      const match = new RegExp(`${name}="([^"]*)"`).exec(attrsString);
+      return match ? match[1] : '';
+    };
     
     stateUpdate = {
       hp: getAttr('hp'),
@@ -23,6 +27,10 @@ export function parseGMResponse(responseText: string) {
       maxMana: getAttr('maxMana'),
       xp: getAttr('xp'),
       level: getAttr('level'),
+      inventory: getStringAttr('inventory').split(',').map(i => {
+        const [name, description] = i.split('|').map(s => s.trim());
+        return { name, description: description || '' };
+      }).filter(i => i.name),
       attributes: {
         Might: getAttr('Might'),
         Agility: getAttr('Agility'),

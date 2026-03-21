@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export interface InventoryItem {
+  name: string;
+  description: string;
+}
+
 export interface GameState {
   hp: number;
   maxHp: number;
@@ -9,6 +14,7 @@ export interface GameState {
   level: number;
   xp: number;
   backstory: string;
+  inventory: InventoryItem[];
   attributes: {
     Might: number;
     Agility: number;
@@ -42,6 +48,7 @@ const initialState = {
   level: 1,
   xp: 0,
   backstory: '',
+  inventory: [],
   attributes: {
     Might: 0,
     Agility: 0,
@@ -63,7 +70,13 @@ export const useGameStore = create<GameState>()(
   persist(
     (set) => ({
       ...initialState,
-      addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+      addMessage: (msg) => set((state) => {
+        const lastMsg = state.messages[state.messages.length - 1];
+        if (lastMsg && lastMsg.role === msg.role && lastMsg.content === msg.content) {
+          return state;
+        }
+        return { messages: [...state.messages, msg] };
+      }),
       setChoices: (choices) => set({ currentChoices: choices }),
       addSystemMemory: (mems) => set((state) => ({ systemMemory: [...state.systemMemory, ...mems] })),
       addCombatLog: (logs) => set((state) => ({ combatLog: [...state.combatLog, ...logs] })),

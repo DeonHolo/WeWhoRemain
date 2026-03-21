@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { LeftSidebar } from './components/LeftSidebar';
 import { GlobalSettings } from './components/GlobalSettings';
+import { soundManager } from './lib/sounds';
 
 const ATTRIBUTE_COLORS: Record<string, string> = {
   Might: 'text-[#c13b51]',
@@ -26,13 +27,13 @@ const ATTRIBUTE_COLORS: Record<string, string> = {
 
 const KEYWORD_COLORS: Record<string, string> = {
   ...ATTRIBUTE_COLORS,
-  HP: 'text-red-400 font-bold',
-  Mana: 'text-blue-400 font-bold',
+  HP: 'text-red-500 font-bold',
+  Mana: 'text-blue-500 font-bold',
   Corrupted: 'text-red-800 font-bold',
-  Outsider: 'text-teal-400 font-bold',
-  System: 'text-cyan-400 font-bold',
-  XP: 'text-yellow-200 font-bold',
-  Level: 'text-yellow-500 font-bold',
+  Outsider: 'text-teal-500 font-bold',
+  System: 'text-cyan-500 font-bold',
+  XP: 'text-yellow-500 font-bold',
+  Level: 'text-yellow-600 font-bold',
 };
 
 const ATTRIBUTE_COLORS_HEX: Record<string, string> = {
@@ -129,7 +130,7 @@ function RichText({ text }: { text: string }) {
             return (
               <motion.span
                 key={i}
-                className="inline-block mx-1 font-black text-white text-2xl uppercase tracking-widest drop-shadow-lg"
+                className="inline-block mx-1 font-black text-foreground text-2xl uppercase tracking-widest drop-shadow-lg"
                 animate={{ x: [-1.5, 1.5, -1.5, 1.5, 0], y: [-1.5, 1.5, -1.5, 1.5, 0] }}
                 transition={{ duration: 0.2, repeat: Infinity, repeatType: "mirror" }}
               >
@@ -144,7 +145,7 @@ function RichText({ text }: { text: string }) {
                   key={idx}
                   animate={{ y: [0, -3, 0] }}
                   transition={{ duration: 1.5, repeat: Infinity, delay: idx * 0.05, ease: "easeInOut" }}
-                  className="inline-block font-black text-white text-2xl uppercase tracking-widest drop-shadow-lg"
+                  className="inline-block font-black text-foreground text-2xl uppercase tracking-widest drop-shadow-lg"
                 >
                   {char === ' ' ? '\u00A0' : char}
                 </motion.span>
@@ -153,26 +154,32 @@ function RichText({ text }: { text: string }) {
           );
         }
         if (token.type === 'header') {
-          return <h3 key={i} className="text-xl font-bold text-white mt-4 mb-2">{renderContent(token.content)}</h3>;
+          return <h3 key={i} className="text-xl font-bold text-foreground mt-4 mb-2">{renderContent(token.content)}</h3>;
         }
         if (token.type === 'bold-italic') {
-          return <strong key={i} className="font-bold italic text-white">{renderContent(token.content)}</strong>;
+          return <strong key={i} className="font-bold italic text-foreground">{renderContent(token.content)}</strong>;
         }
         if (token.type === 'bold') {
-          return <strong key={i} className="font-bold text-white">{renderContent(token.content)}</strong>;
+          return <strong key={i} className="font-bold text-foreground">{renderContent(token.content)}</strong>;
         }
         if (token.type === 'italic') {
-          return <em key={i} className="italic text-gray-300">{renderContent(token.content)}</em>;
+          return <em key={i} className="italic text-foreground/80">{renderContent(token.content)}</em>;
         }
-        return <span key={i} className="text-gray-300">{renderContent(token.content)}</span>;
+        return <span key={i} className="text-foreground/80">{renderContent(token.content)}</span>;
       })}
     </div>
   );
 }
 
-function StoryDisplay({ text, onComplete }: { text: string, onComplete?: () => void }) {
+function StoryDisplay({ text, onComplete, isLast }: { text: string, onComplete?: () => void, isLast?: boolean }) {
   const blocks = text.split('\n\n').filter(block => block.trim() !== '');
-  const [visibleBlocks, setVisibleBlocks] = useState(1);
+  const [visibleBlocks, setVisibleBlocks] = useState(isLast ? 1 : blocks.length);
+
+  useEffect(() => {
+    if (!isLast) {
+      setVisibleBlocks(blocks.length);
+    }
+  }, [isLast, blocks.length]);
 
   useEffect(() => {
     if (blocks.length === 0 && onComplete) {
@@ -194,13 +201,16 @@ function StoryDisplay({ text, onComplete }: { text: string, onComplete?: () => v
           <RichText text={block} />
         </motion.div>
       ))}
-      {visibleBlocks < blocks.length && (
+      {isLast && visibleBlocks < blocks.length && (
         <div className="flex justify-center pt-8">
           <motion.button
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            onClick={() => setVisibleBlocks(prev => prev + 1)}
-            className="px-10 py-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg font-black tracking-widest uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] border border-white/10"
+            onClick={() => {
+              soundManager.playRustle();
+              setVisibleBlocks(prev => prev + 1);
+            }}
+            className="px-10 py-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg font-black tracking-widest uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] border border-foreground/10"
           >
             Continue
           </motion.button>
@@ -247,11 +257,14 @@ function Dice({ stat, targetDC, statValue, onComplete }: { stat: string, targetD
           </Text>
           <Html position={[0, -2, 0]} center zIndexRange={[100, 0]}>
             <div className="flex flex-col items-center gap-4 w-max mt-8">
-              <div className="text-xl font-bold text-white bg-black/80 p-4 rounded-xl backdrop-blur-md border border-white/10 whitespace-nowrap shadow-2xl">
+              <div className="text-xl font-bold text-foreground bg-background/80 p-4 rounded-xl backdrop-blur-md border border-border whitespace-nowrap shadow-2xl">
                 Result: {rollResult + statValue} (Roll {rollResult} + Mod {statValue}) vs DC {targetDC}
               </div>
               <button
-                onClick={() => onComplete(rollResult)}
+                onClick={() => {
+                  soundManager.playThud();
+                  onComplete(rollResult);
+                }}
                 className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-bold hover:bg-primary/90 transition-colors cursor-pointer pointer-events-auto shadow-lg"
               >
                 Continue
@@ -264,35 +277,46 @@ function Dice({ stat, targetDC, statValue, onComplete }: { stat: string, targetD
   );
 }
 
-function CreationUI({ messages, currentChoices, handleChoice, isLoading, isRolling }: any) {
+function CreationUI({ 
+  messages, currentChoices, handleChoice, isLoading, isRolling,
+  hp, maxHp, mana, maxMana, level, xp, backstory, attributes, inventory
+}: any) {
   const visibleMessages = isRolling && messages[messages.length - 1]?.role === 'model' 
     ? messages.slice(0, -1) 
     : messages;
   const lastModelMessage = [...visibleMessages].reverse().find(m => m.role === 'model');
   const [isStoryFinished, setIsStoryFinished] = useState(false);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
 
   useEffect(() => {
     setIsStoryFinished(false);
   }, [lastModelMessage]);
 
   return (
-    <div className="h-[100dvh] flex flex-col items-center justify-center p-2 md:p-4 bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 via-background to-background" />
+    <div className="flex h-[100dvh] bg-background text-foreground overflow-hidden selection:bg-primary/20">
+      {hp > 0 && (
+        <LeftSidebar 
+          hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} attributes={attributes} backstory={backstory} inventory={inventory}
+          isOpen={leftSidebarOpen} setIsOpen={setLeftSidebarOpen}
+        />
+      )}
+      <div className="flex-1 flex flex-col items-center justify-center p-2 md:p-4 bg-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-foreground/5 via-background to-background" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl w-full z-10 flex flex-col h-full py-2 md:py-4"
-      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-7xl w-full z-10 flex flex-col h-full py-2 md:py-4"
+        >
         <div className="text-center space-y-2 mb-4 shrink-0">
-          <h1 className="text-2xl md:text-4xl font-black tracking-widest text-white/90 drop-shadow-lg">WE WHO REMAIN</h1>
+          <h1 className="text-2xl md:text-4xl font-black tracking-widest text-foreground/90 drop-shadow-lg">WE WHO REMAIN</h1>
           <Separator className="w-24 bg-red-900/50 mx-auto" />
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar mb-4 pr-1 md:pr-2">
           <Card className="bg-card/40 backdrop-blur-md border-border shadow-2xl min-h-full">
             <CardContent className="p-4 md:p-6 text-sm md:text-base leading-snug">
-              {lastModelMessage ? <StoryDisplay text={lastModelMessage.content} onComplete={() => setIsStoryFinished(true)} /> : "Initializing The System..."}
+              {lastModelMessage ? <StoryDisplay text={lastModelMessage.content} isLast={true} onComplete={() => setIsStoryFinished(true)} /> : "Initializing The System..."}
               
               {!isLoading && isStoryFinished && currentChoices.length > 0 && (
                 <div className="mt-4 space-y-2">
@@ -300,22 +324,28 @@ function CreationUI({ messages, currentChoices, handleChoice, isLoading, isRolli
                   {currentChoices.map((c: any, i: number) => (
                     <div
                       key={i}
-                      onClick={() => handleChoice(`"${c.text}"`)}
+                      onClick={() => {
+                        soundManager.playClick();
+                        handleChoice(`"${c.text}"`);
+                      }}
+                      onMouseEnter={() => soundManager.playRustle()}
                       className="flex items-start gap-3 group cursor-pointer p-2 -mx-2 rounded-lg hover:bg-accent/50 transition-colors"
                     >
                       <span className="text-primary mt-0.5"><ChevronRight size={16} /></span>
-                      <span className="text-base md:text-lg text-white/80 group-hover:text-white transition-colors leading-snug">
+                      <div className="text-base md:text-lg text-foreground/80 group-hover:text-foreground transition-colors leading-snug">
                         {c.attribute ? (
-                          <>
+                          <div className="flex flex-wrap items-center gap-x-2">
                             <span className={`font-bold ${ATTRIBUTE_COLORS[c.attribute] || 'text-muted-foreground'}`}>
                               [{c.attribute}{c.dc ? ` | DC ${c.dc}` : ''}]
-                            </span>{' '}
-                            {c.text}
-                          </>
+                            </span>
+                            <RichText text={c.text} />
+                          </div>
                         ) : (
-                          `"${c.text}"`
+                          <div className="flex items-center gap-x-1">
+                            <span>"</span><RichText text={c.text} /><span>"</span>
+                          </div>
                         )}
-                      </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -336,9 +366,10 @@ function CreationUI({ messages, currentChoices, handleChoice, isLoading, isRolli
               <Input
                 type="text"
                 placeholder={currentChoices.length > 0 ? "Or type a custom choice..." : "Enter your choice..."}
-                className="w-full bg-input/50 border-border rounded-xl p-4 text-base h-auto focus-visible:ring-primary/50 text-white placeholder:text-muted-foreground"
+                className="w-full bg-input/50 border-border rounded-xl p-4 text-base h-auto focus-visible:ring-primary/50 text-foreground placeholder:text-muted-foreground"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    soundManager.playClick();
                     handleChoice(e.currentTarget.value.trim());
                     e.currentTarget.value = '';
                   }
@@ -351,12 +382,13 @@ function CreationUI({ messages, currentChoices, handleChoice, isLoading, isRolli
           )}
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }
 
 function PlayingUI({
-  hp, maxHp, mana, maxMana, level, xp, backstory, attributes,
+  hp, maxHp, mana, maxMana, level, xp, backstory, attributes, inventory,
   systemMemory, combatLog, messages, currentChoices, isLoading, isRolling,
   handleChoice, chatContainerRef
 }: any) {
@@ -375,7 +407,7 @@ function PlayingUI({
   return (
     <div className="flex h-[100dvh] bg-background text-foreground overflow-hidden selection:bg-primary/20">
       <LeftSidebar 
-        hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} attributes={attributes} backstory={backstory}
+        hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} attributes={attributes} backstory={backstory} inventory={inventory}
         isOpen={leftSidebarOpen} setIsOpen={setLeftSidebarOpen}
       />
       
@@ -394,7 +426,7 @@ function PlayingUI({
                     className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`max-w-[90%] md:max-w-[85%] p-5 rounded-2xl text-lg ${m.role === 'user' ? 'bg-muted text-muted-foreground border border-border rounded-br-sm' : 'bg-transparent'}`}>
-                      {m.role === 'user' ? m.content : <StoryDisplay text={m.content} onComplete={isLast ? () => setIsLastMessageFinished(true) : undefined} />}
+                      {m.role === 'user' ? m.content : <StoryDisplay text={m.content} isLast={isLast} onComplete={isLast ? () => setIsLastMessageFinished(true) : undefined} />}
                     </div>
                   </motion.div>
                 );
@@ -416,22 +448,28 @@ function PlayingUI({
                   {currentChoices.map((c: any, i: number) => (
                     <div
                       key={i}
-                      onClick={() => handleChoice(`"${c.text}"`)}
+                      onClick={() => {
+                        soundManager.playClick();
+                        handleChoice(`"${c.text}"`);
+                      }}
+                      onMouseEnter={() => soundManager.playRustle()}
                       className="flex items-start gap-4 group cursor-pointer p-3 -mx-3 rounded-lg hover:bg-accent/50 transition-colors pointer-events-auto"
                     >
                       <span className="text-primary mt-1"><ChevronRight size={18} /></span>
-                      <span className="text-lg md:text-xl text-white/80 group-hover:text-white transition-colors leading-relaxed">
+                      <div className="text-lg md:text-xl text-foreground/80 group-hover:text-foreground transition-colors leading-relaxed">
                         {c.attribute ? (
-                          <>
+                          <div className="flex flex-wrap items-center gap-x-2">
                             <span className={`font-bold ${ATTRIBUTE_COLORS[c.attribute] || 'text-muted-foreground'}`}>
                               [{c.attribute}{c.dc ? ` | DC ${c.dc}` : ''}]
-                            </span>{' '}
-                            {c.text}
-                          </>
+                            </span>
+                            <RichText text={c.text} />
+                          </div>
                         ) : (
-                          `"${c.text}"`
+                          <div className="flex items-center gap-x-1">
+                            <span>"</span><RichText text={c.text} /><span>"</span>
+                          </div>
                         )}
-                      </span>
+                      </div>
                     </div>
                   ))}
                 </motion.div>
@@ -445,9 +483,10 @@ function PlayingUI({
               <Input
                 type="text"
                 placeholder={currentChoices.length > 0 ? "Or take a different action..." : "What do you do?"}
-                className="w-full bg-input/30 border-border rounded-xl p-4 text-lg h-auto focus-visible:ring-primary/50 text-white placeholder:text-muted-foreground shadow-sm"
+                className="w-full bg-input/30 border-border rounded-xl p-4 text-lg h-auto focus-visible:ring-primary/50 text-foreground placeholder:text-muted-foreground shadow-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    soundManager.playClick();
                     handleChoice(e.currentTarget.value.trim());
                     e.currentTarget.value = '';
                   }
@@ -465,6 +504,15 @@ function PlayingUI({
           animate={{ width: rightSidebarOpen ? 320 : 0 }}
           className="bg-card border-l border-border flex flex-col shadow-xl z-20 relative shrink-0"
         >
+          <button 
+            onClick={() => {
+              soundManager.playRustle();
+              setRightSidebarOpen(!rightSidebarOpen);
+            }} 
+            className="absolute -left-3 top-6 p-1 bg-accent hover:bg-accent/80 rounded-full border border-border transition-colors z-30"
+          >
+            {rightSidebarOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
           <div className="flex-1 overflow-y-auto w-80 p-6 border-b border-border custom-scrollbar">
             <div className="text-xs text-muted-foreground font-bold tracking-widest mb-6 flex items-center gap-2">
               <Database size={16}/> SYSTEM MEMORY
@@ -476,7 +524,7 @@ function PlayingUI({
                     key={i}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="text-sm text-cyan-100/90 bg-cyan-950/30 p-3 rounded-lg border border-cyan-900/50 leading-relaxed shadow-sm"
+                    className="text-sm text-cyan-900 dark:text-cyan-100/90 bg-cyan-100/50 dark:bg-cyan-950/30 p-3 rounded-lg border border-cyan-200 dark:border-cyan-900/50 leading-relaxed shadow-sm"
                   >
                     {mem}
                   </motion.div>
@@ -495,7 +543,7 @@ function PlayingUI({
                     key={i}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="text-xs text-red-300/90 font-mono bg-red-950/20 p-2 rounded border border-red-900/30"
+                    className="text-xs text-red-900 dark:text-red-300/90 font-mono bg-red-100/50 dark:bg-red-950/20 p-2 rounded border border-red-200 dark:border-red-900/30"
                   >
                     &gt; {log}
                   </motion.div>
@@ -512,17 +560,21 @@ function PlayingUI({
 function StartMenu({ onStart }: { onStart: () => void }) {
   return (
     <div className="h-[100dvh] flex flex-col items-center justify-center bg-background relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 via-background to-background" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-foreground/5 via-background to-background" />
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="z-10 text-center space-y-8"
       >
-        <h1 className="text-5xl md:text-7xl font-black tracking-widest text-white/90 drop-shadow-lg">WE WHO REMAIN</h1>
+        <h1 className="text-5xl md:text-7xl font-black tracking-widest text-foreground/90 drop-shadow-lg">WE WHO REMAIN</h1>
         <p className="text-muted-foreground text-lg max-w-md mx-auto">A text-based apocalyptic LitRPG.</p>
         <button
-          onClick={onStart}
-          className="px-12 py-4 bg-primary text-primary-foreground rounded-lg font-black tracking-widest uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] border border-white/10"
+          onClick={() => {
+            soundManager.playThud();
+            onStart();
+          }}
+          onMouseEnter={() => soundManager.playRustle()}
+          className="px-12 py-4 bg-primary text-primary-foreground rounded-lg font-black tracking-widest uppercase hover:scale-105 transition-transform shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] border border-foreground/10"
         >
           Enter The System
         </button>
@@ -533,7 +585,7 @@ function StartMenu({ onStart }: { onStart: () => void }) {
 
 export default function App() {
   const {
-    hp, maxHp, mana, maxMana, level, xp, backstory, attributes,
+    hp, maxHp, mana, maxMana, level, xp, backstory, attributes, inventory,
     systemMemory, combatLog, messages, currentChoices, isRolling, hasStarted, pendingParsed,
     addMessage, setChoices, addSystemMemory, addCombatLog, updateState, setRolling, setPendingParsed
   } = useGameStore();
@@ -596,6 +648,7 @@ export default function App() {
       if (parsed.diceRoll) {
         setPendingParsed(parsed);
         setRolling(true);
+        soundManager.playAttributeSound(parsed.diceRoll.stat);
       } else {
         applyParsedResponse(parsed);
       }
@@ -607,11 +660,44 @@ export default function App() {
     }
   };
 
-  const onDiceComplete = () => {
+  const onDiceComplete = async (rollResult: number) => {
     setRolling(false);
-    if (pendingParsed) {
-      applyParsedResponse(pendingParsed);
+    if (pendingParsed && pendingParsed.diceRoll) {
+      const { stat, statValue, targetDC } = pendingParsed.diceRoll;
+      const total = rollResult + statValue;
+      
+      if (total >= targetDC) {
+        soundManager.playSuccess();
+      } else {
+        soundManager.playFailure();
+      }
+
+      const systemMessage = `[System: The player rolled a ${rollResult}. Total: ${total} vs DC ${targetDC}. Describe the outcome.]`;
+      
       setPendingParsed(null);
+      
+      if (isLoading) return;
+      setIsLoading(true);
+      
+      try {
+        const response = await sendMessage(systemMessage);
+        const parsed = parseGMResponse(response);
+        
+        addMessage({ role: 'model', content: parsed.narrative });
+        
+        if (parsed.diceRoll) {
+          setPendingParsed(parsed);
+          setRolling(true);
+          soundManager.playAttributeSound(parsed.diceRoll.stat);
+        } else {
+          applyParsedResponse(parsed);
+        }
+      } catch (e) {
+        console.error(e);
+        addMessage({ role: 'model', content: "System Error: Connection to the Game Master lost." });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -631,12 +717,13 @@ export default function App() {
               handleChoice={handleChoice}
               isLoading={isLoading}
               isRolling={isRolling}
+              hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} backstory={backstory} attributes={attributes} inventory={inventory}
             />
           </motion.div>
         ) : (
           <motion.div key="playing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <PlayingUI
-              hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} backstory={backstory} attributes={attributes}
+              hp={hp} maxHp={maxHp} mana={mana} maxMana={maxMana} level={level} xp={xp} backstory={backstory} attributes={attributes} inventory={inventory}
               systemMemory={systemMemory} combatLog={combatLog} messages={messages} currentChoices={currentChoices}
               isLoading={isLoading} isRolling={isRolling} handleChoice={handleChoice} chatContainerRef={chatContainerRef}
             />
@@ -653,7 +740,7 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center"
           >
-            <div className="text-3xl font-black text-white mb-8 tracking-widest drop-shadow-lg">
+            <div className="text-3xl font-black text-foreground mb-8 tracking-widest drop-shadow-lg">
               ROLLING <span className={ATTRIBUTE_COLORS[pendingParsed.diceRoll.stat]}>{pendingParsed.diceRoll.stat.toUpperCase()}</span>
             </div>
             <div className="w-full h-96 max-w-2xl">
@@ -669,7 +756,7 @@ export default function App() {
               </Canvas>
             </div>
             <div className="text-muted-foreground mt-8 font-mono text-xl">
-              TARGET DC: <span className="text-white">{pendingParsed.diceRoll.targetDC}</span> | MODIFIER: <span className="text-white">+{pendingParsed.diceRoll.statValue}</span>
+              TARGET DC: <span className="text-foreground">{pendingParsed.diceRoll.targetDC}</span> | MODIFIER: <span className="text-foreground">+{pendingParsed.diceRoll.statValue}</span>
             </div>
           </motion.div>
         )}
